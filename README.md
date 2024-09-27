@@ -1,2 +1,3 @@
 # CG_Project
-컴그 수업 프로젝트입니다.
+3d 예시 프로젝트 입니다.
+babylon.js 사용
