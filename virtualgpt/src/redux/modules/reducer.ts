@@ -36,8 +36,8 @@ export const getSpeech = (text:any) => {
     }
   
     const speech = (txt:string) => {
-      const lang = "ko-KR"; 
-      //const lang = "en-US"
+      // const lang = "ko-KR"; 
+      const lang = "en-US"
       const utterThis = new SpeechSynthesisUtterance(txt);
   
       utterThis.lang = lang;

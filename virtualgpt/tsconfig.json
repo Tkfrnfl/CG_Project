@@ -21,6 +21,7 @@
     "jsx": "react-jsx"
   },
   "include": [
-    "src"
+    "src/**/*",
+    "src/declarations.d.ts" // 추가할 필요 없음, 기본적으로 포함됨
   ]
 }

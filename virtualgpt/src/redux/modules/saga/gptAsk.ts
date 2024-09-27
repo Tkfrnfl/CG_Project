@@ -35,7 +35,7 @@ function getResponseGptApi(action:gptAskType) {
 {
   headers: {
     "Content-Type": "application/json",
-    Authorization: `Bearer ${'env Key need'}`,
+    Authorization: `Bearer ${'gpt key'}`,
   },
     });
 }
@@ -44,12 +44,18 @@ function getResponseGptApi(action:gptAskType) {
 
 function* getResponseGpt(action:any):Generator<any> {
   try {
-    // api 통신할때는 call
-    const result:any = yield call(getResponseGptApi, action);
-    console.log('test')
-    console.log(result)
-    // 아래와 같이 api 결과를 핸들링하여 dispatch 가능
-    yield put({ type: ActionType.POST_GPT_SUCCESS, payload: result.data.choices[0].message.content });
+    // // api 통신할때는 call
+    // const result:any = yield call(getResponseGptApi, action);
+
+    // // 아래와 같이 api 결과를 핸들링하여 dispatch 가능 (gpt 활성화 코드)
+    // yield put({ type: ActionType.POST_GPT_SUCCESS, payload: result.data.choices[0].message.content });
+    const userMessage = action.payload; // 사용자가 입력한 데이터
+    
+    // 입력된 데이터를 바로 dispatch
+    yield put({
+      type: ActionType.POST_GPT_SUCCESS, 
+      payload: userMessage // API 응답 대신 입력된 데이터를 그대로 사용
+    });
   } catch (err:any) {
     console.log(err)
     yield put({ type: ActionType.POST_GPT_FAIL, payload: err.response.data });

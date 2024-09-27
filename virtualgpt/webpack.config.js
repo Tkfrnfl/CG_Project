@@ -38,19 +38,24 @@ module.exports = {
       {
         test: /\.css$/,
         use: [
-          'css-modules-typescript-loader',
-          {
-            loader: 'css-loader',
-            options: {
-              modules: true
-            }
-          }
-        ]
+          'style-loader', // JS에서 CSS를 삽입
+          'css-loader', // CSS를 JS로 변환
+          'postcss-loader', // PostCSS를 사용하여 CSS 처리
+        ],
       },
       {
-        test: /\.(png|svg|jpg|jpeg|gif|ico|json)$/,
+        test: /\.(png|svg|jpg|jpeg|gif|ico|json)$/i,
         exclude: /node_modules/,
-        use: ['file-loader?name=[name].[ext]'] // ?name=[name].[ext] is only necessary to preserve the original file name
+        use: [
+          {
+            loader: 'file-loader',
+            options: {
+              name: '[path][name].[ext]', // 원래 파일 이름과 경로 유지
+              outputPath: 'images/', // 출력할 경로
+              publicPath: 'images/', // 웹에서 접근할 경로
+            },
+          },
+        ],
       }
     ],
   },

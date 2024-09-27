@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react'
-import { addIronMan, addFurniture, addDoor,addWall } from './objects'
+import React, { useEffect, useRef, useState } from 'react'
+import { addIronMan, addFurniture, addDoor,addWall, addBird } from './objects'
 
 import {
     FreeCamera,
@@ -24,6 +24,7 @@ import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial'
 import { useSelector, useDispatch } from 'react-redux'
 import { RootState, rootReducer } from '../redux/modules/reducer'
 import { changeTextInput, askGpt } from '../redux/modules/actions'
+import { store } from '../index'
 
 let initializedHavok
 
@@ -143,7 +144,8 @@ const onSceneReady = async (scene: Scene) => {
     const babylonPlugin = new HavokPlugin(true, hk)
     scene.enablePhysics(gravity, babylonPlugin)
 
-    addIronMan(scene)
+    //addIronMan(scene)
+    addBird(scene)
     addFurniture(scene)
     addDoor(scene)
    addWall(scene)
@@ -152,35 +154,42 @@ const onSceneReady = async (scene: Scene) => {
 /**
  * Will run on every frame render.  We are spinning the box on y-axis.
  */
+
+
+let previousCameraPosition = new Vector3(); // 이전 프레임의 카메라 위치를 저장할 변수
+
 const onRender = (scene: Scene) => {
     if (ground !== undefined) {
         var deltaTimeInMillis = scene.getEngine().getDeltaTime()
-
     }
-   
-    var robot :any
-    scene.meshes.find((mesh)=>{
-        if(mesh.name=="robot"){
-            robot=mesh
-        }}) 
-  
-    if ( Math.sqrt((robot?.position.x-scene.cameras[0].position.x)**2+(robot?.position.y-scene.cameras[0].position.y)**2+(robot?.position.z-scene.cameras[0].position.z)**2) >15){
-        console.log('??')
-        setTimeout(()=>{
-            scene.meshes.find((mesh)=>{
-                if(mesh.name=="robot"){
-                    //mesh.parent=scene.cameras[0]
-                    mesh.position.x=scene.cameras[0].position.x
-                    mesh.position.y=scene.cameras[0].position.y-10
 
-                    mesh.position.z=scene.cameras[0].position.z
-            
-                    
-                }}) 
+    let bird: any = scene.getMeshByName("bird")
 
-            // robot.position.x=scene.cameras[0].position.x
-            // robot.position.y=scene.cameras[0].position.y
-        },2000)
+    if (bird) {
+        const camera = scene.activeCamera
+
+        if (camera) {
+            // 카메라의 현재 위치와 이전 위치를 비교하여 움직였는지 확인
+            const cameraMoved = !camera.position.equalsWithEpsilon(previousCameraPosition, 0.01) // 카메라의 위치 변화 감지
+
+            if (cameraMoved) {
+                // 카메라가 움직였을 때만 bird의 위치를 갱신
+                const rightDirection = camera.getDirection(new Vector3(1, 0, 0)) // 카메라의 오른쪽 방향
+                const backDirection = camera.getDirection(new Vector3(0, 0, -1)) // 카메라의 뒤쪽 방향
+
+                // bird가 카메라의 우측 뒤에 위치하도록 설정
+                const desiredPosition = camera.position
+                    .add(rightDirection.scale(10)) // 우측으로 10만큼 이동
+                    .add(backDirection.scale(-20))  // 뒤로 5만큼 이동
+                    .add(new Vector3(0, -10, 0))  // 카메라보다 아래에 위치
+
+                // bird의 위치를 부드럽게 이동
+                bird.position = Vector3.Lerp(bird.position, desiredPosition, 0.05)
+            }
+
+            // 현재 카메라 위치를 이전 위치로 저장
+            previousCameraPosition.copyFrom(camera.position)
+        }
     }
 }
 
@@ -188,6 +197,7 @@ export default () => {
     const [ask, setAsk] = useState('')
     const handleChange = ({ target: { value } }: any) => setAsk(value)
     const dispatch = useDispatch()
+    const canvasRef = useRef<HTMLCanvasElement | null>(null)
     const textInputState = useSelector(
         (state: RootState) => state.textInputReducer
     )
@@ -200,16 +210,31 @@ export default () => {
     useEffect(() => {
         const canvas: any = document.getElementById('modeler')
         const engine: any = new Engine(canvas)
+        canvas.width = 800
+        canvas.height = 400
 
-        canvas.width = 1000
-        canvas.height = 500
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (canvas && document.activeElement === canvas) {
+                if (!['w', 'a', 's', 'd', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key.toLowerCase())) {
+                    e.preventDefault()
+                }
+            }
+        }
+
+        window.addEventListener('keydown', handleKeyDown)
+
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown)
+        }
+
     }, [])
+
 
     const handleSubmit = async (event: any) => {
         console.log(ask)
         event.preventDefault()
         await dispatch(askGpt(ask))
-        //const gptRespnseState=store.getState((state:RootState)=>state.gptAskReducer)
+        await store.dispatch(changeTextInput())
         console.log(gptRespnseState)
     }
 
@@ -227,14 +252,14 @@ export default () => {
                         <input
                             type="text"
                             className="askGpt"
-                            placeholder="Ask to gpt"
+                            placeholder="Ask to bird"
                             value={ask}
                             onChange={handleChange}
                             style={{backgroundColor:'transparent', fontSize:20}}
                         ></input>{' '}
                         <button type="submit"
                         style={{backgroundColor:'transparent', fontSize:20}}
-                        >질문</button>
+                        >Ask</button>
                     </form>
                 ) : (
                     ''

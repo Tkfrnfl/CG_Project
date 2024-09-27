@@ -188,6 +188,33 @@ const addIronMan = (scene: Scene) => {
         }
     )
 }
+
+//Bird
+const addBird = (scene: Scene) => {
+    SceneLoader.ImportMesh(
+        '',
+        '../assets/',
+        'bird.glb',
+        scene,
+        (meshes) => {
+            console.log(meshes)
+
+            for (var i = 0; i < meshes.length; i++) {
+                const mesh = meshes[i]
+                mesh.position.set(0, 0, 0)
+                mesh.rotation = new Vector3(0, Math.PI, 0)  // Y축을 기준으로 180도 회전
+                mesh.scaling.setAll(1)
+                mesh.name = "bird"
+                // mesh.checkCollisions = true
+                mesh.actionManager = new ActionManager(scene)
+                mesh.actionManager.registerAction(
+                    new ExecuteCodeAction(ActionManager.OnPickTrigger, tryChat)
+                )
+            }
+        }
+    )
+}
+
 const addWall = (scene: Scene) => {
     SceneLoader.ImportMesh(
         '',
@@ -210,4 +237,4 @@ const addWall = (scene: Scene) => {
     )
 }
 
-export { addIronMan, addFurniture, addDoor,addWall }
+export { addIronMan, addFurniture, addDoor,addWall, addBird }
